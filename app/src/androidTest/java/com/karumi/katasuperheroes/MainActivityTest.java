@@ -16,9 +16,12 @@
 
 package com.karumi.katasuperheroes;
 
+import android.content.Intent;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.espresso.NoMatchingViewException;
+import android.support.test.espresso.contrib.RecyclerViewActions;
 import android.support.test.espresso.intent.rule.IntentsTestRule;
+import android.support.test.espresso.matcher.ViewMatchers;
 import android.support.test.runner.AndroidJUnit4;
 import android.test.suitebuilder.annotation.LargeTest;
 import android.view.View;
@@ -30,12 +33,15 @@ import com.karumi.katasuperheroes.model.SuperHero;
 import com.karumi.katasuperheroes.model.SuperHeroesRepository;
 import com.karumi.katasuperheroes.recyclerview.RecyclerViewInteraction;
 import com.karumi.katasuperheroes.ui.view.MainActivity;
+import com.karumi.katasuperheroes.ui.view.SuperHeroDetailActivity;
+
 import it.cosenonjaviste.daggermock.DaggerMockRule;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.hamcrest.Matcher;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,11 +54,14 @@ import static android.support.test.espresso.Espresso.onView;
 import static android.support.test.espresso.action.ViewActions.click;
 import static android.support.test.espresso.assertion.ViewAssertions.doesNotExist;
 import static android.support.test.espresso.assertion.ViewAssertions.matches;
+import static android.support.test.espresso.intent.matcher.IntentMatchers.hasComponent;
+import static android.support.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 import static android.support.test.espresso.matcher.ViewMatchers.hasDescendant;
 import static android.support.test.espresso.matcher.ViewMatchers.isClickable;
 import static android.support.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static android.support.test.espresso.matcher.ViewMatchers.withId;
 import static android.support.test.espresso.matcher.ViewMatchers.withText;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.when;
 
@@ -86,7 +95,7 @@ import static org.mockito.Mockito.when;
 
   @Test
   public void showsCaseIfThereAreSuperHeroes() {
-    givenThereAreSuperHeroes();
+    givenThereAreSuperHeroes(false);
 
     startActivity();
 
@@ -95,7 +104,7 @@ import static org.mockito.Mockito.when;
 
   @Test
   public void doesNotShowProgressBarIfThereAreSuperHeroes() {
-    givenThereAreSuperHeroes();
+    givenThereAreSuperHeroes(false);
 
     startActivity();
 
@@ -104,7 +113,7 @@ import static org.mockito.Mockito.when;
 
   @Test
   public void checkTheSuperHeroesSentAreThere(){
-    final List<SuperHero> superheroes = givenThereAreSuperHeroes();
+    final List<SuperHero> superheroes = givenThereAreSuperHeroes(false);
 
     startActivity();
 
@@ -123,18 +132,52 @@ import static org.mockito.Mockito.when;
             });
 
   }
-/*
+
   @Test
-  public void doesShowProgressBarIfThereAreSuperHeroes() {
-    givenThereAreSuperHeroes();
+  public void checkTheAvengersHeroIsAnAvenger(){
+    final List<SuperHero> superheroes = givenThereAreSuperHeroes(true);
 
     startActivity();
 
-    //onView(withId(R.id.recycler_view)).perform(click());
-    onView(withId(R.id.progress_bar)).check(matches(isDisplayed()));
+    final List<Boolean> names = new ArrayList<>();
+    for (SuperHero superHero : superheroes) {
+      names.add(superHero.isAvenger());
+    }
+
+    RecyclerViewInteraction.<Boolean>onRecyclerView(withId(R.id.recycler_view))
+            .withItems(names)
+            .check(new RecyclerViewInteraction.ItemViewAssertion<Boolean>() {
+              @Override
+              public void check(Boolean avenger, View view, NoMatchingViewException e) {
+                if (avenger){
+                  matches(hasDescendant(allOf(withId(R.id.iv_avengers_badge), isDisplayed()))).check(view, e);
+                }
+              }
+            });
+
+  }
+/*
+  @Test
+  public void checkDetailsPageIsCorrectlyOpenedAfterClicking(){
+    final List<SuperHero> superheroes = givenThereAreSuperHeroes(true);
+
+    startActivity();
+    int indexSelected = 0;
+
+    onView(withId(R.id.recycler_view)).perform(RecyclerViewActions.actionOnItemAtPosition(0,click()));
+
+    SuperHero selectedHero = superheroes.get(indexSelected);
+
+    intended(hasComponent(SuperHeroDetailActivity.class.getCanonicalName()));
+    intended(hasExtra("super_hero_name_key", selectedHero.getName()));
   }
 */
-  private List<SuperHero> givenThereAreSuperHeroes() {
+  private void intended(Matcher<Intent> intentMatcher) {
+
+  }
+
+
+  private List<SuperHero> givenThereAreSuperHeroes(Boolean is_avenger) {
     /*List<SuperHero> nonEmptyList = new ArrayList<>();
     SuperHero hero = new SuperHero("Iron Man", "https://i.annihil.us/u/prod/marvel/i/mg/c/60/55b6a28ef24fa.jpg",
             true, "Wounded, captured and forced to build a weapon by his enemies, billionaire "
@@ -145,7 +188,7 @@ import static org.mockito.Mockito.when;
     final List<SuperHero> superheroes = new ArrayList<>();
 
     for (int i = 0; i < 10; i++) {
-      SuperHero superhero = new SuperHero("name " +i, null, false, "de");
+      SuperHero superhero = new SuperHero("name " +i, null, is_avenger, "de");
       superheroes.add(superhero);
     }
     when(repository.getAll()).thenReturn(superheroes);

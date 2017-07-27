@@ -19,7 +19,7 @@ public class RecyclerViewInteraction<A> {
   private Matcher<View> viewMatcher;
   private List<A> items;
 
-  private RecyclerViewInteraction(Matcher<View> viewMatcher) {
+  public RecyclerViewInteraction(Matcher<View> viewMatcher) {
     this.viewMatcher = viewMatcher;
   }
 

@@ -17,13 +17,18 @@
 package com.karumi.katasuperheroes;
 
 import android.support.test.InstrumentationRegistry;
+import android.support.test.espresso.NoMatchingViewException;
 import android.support.test.espresso.intent.rule.IntentsTestRule;
 import android.support.test.runner.AndroidJUnit4;
 import android.test.suitebuilder.annotation.LargeTest;
+import android.view.View;
+
 import com.karumi.katasuperheroes.di.MainComponent;
 import com.karumi.katasuperheroes.di.MainModule;
+import com.karumi.katasuperheroes.matchers.RecyclerViewItemsCountMatcher;
 import com.karumi.katasuperheroes.model.SuperHero;
 import com.karumi.katasuperheroes.model.SuperHeroesRepository;
+import com.karumi.katasuperheroes.recyclerview.RecyclerViewInteraction;
 import com.karumi.katasuperheroes.ui.view.MainActivity;
 import it.cosenonjaviste.daggermock.DaggerMockRule;
 
@@ -38,10 +43,12 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import static android.R.attr.name;
 import static android.support.test.espresso.Espresso.onView;
 import static android.support.test.espresso.action.ViewActions.click;
 import static android.support.test.espresso.assertion.ViewAssertions.doesNotExist;
 import static android.support.test.espresso.assertion.ViewAssertions.matches;
+import static android.support.test.espresso.matcher.ViewMatchers.hasDescendant;
 import static android.support.test.espresso.matcher.ViewMatchers.isClickable;
 import static android.support.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static android.support.test.espresso.matcher.ViewMatchers.withId;
@@ -94,6 +101,28 @@ import static org.mockito.Mockito.when;
 
     onView(withId(R.id.progress_bar)).check(matches(not(isDisplayed())));
   }
+
+  @Test
+  public void checkTheSuperHeroesSentAreThere(){
+    final List<SuperHero> superheroes = givenThereAreSuperHeroes();
+
+    startActivity();
+
+    final List<String> names = new ArrayList<>();
+    for (SuperHero superHero : superheroes) {
+      names.add(superHero.getName());
+    }
+
+    RecyclerViewInteraction.<String>onRecyclerView(withId(R.id.recycler_view))
+    .withItems(names)
+            .check(new RecyclerViewInteraction.ItemViewAssertion<String>() {
+              @Override
+              public void check(String name, View view, NoMatchingViewException e) {
+                matches(hasDescendant(withText(name))).check(view, e);
+              }
+            });
+
+  }
 /*
   @Test
   public void doesShowProgressBarIfThereAreSuperHeroes() {
@@ -105,7 +134,7 @@ import static org.mockito.Mockito.when;
     onView(withId(R.id.progress_bar)).check(matches(isDisplayed()));
   }
 */
-  private void givenThereAreSuperHeroes() {
+  private List<SuperHero> givenThereAreSuperHeroes() {
     /*List<SuperHero> nonEmptyList = new ArrayList<>();
     SuperHero hero = new SuperHero("Iron Man", "https://i.annihil.us/u/prod/marvel/i/mg/c/60/55b6a28ef24fa.jpg",
             true, "Wounded, captured and forced to build a weapon by his enemies, billionaire "
@@ -120,6 +149,7 @@ import static org.mockito.Mockito.when;
       superheroes.add(superhero);
     }
     when(repository.getAll()).thenReturn(superheroes);
+    return superheroes;
     /*when(repository.getAll()).then(new Answer<Object>() {
       @Override
       public Object answer(InvocationOnMock invocationOnMock) throws Throwable {

@@ -26,16 +26,27 @@ import com.karumi.katasuperheroes.model.SuperHero;
 import com.karumi.katasuperheroes.model.SuperHeroesRepository;
 import com.karumi.katasuperheroes.ui.view.MainActivity;
 import it.cosenonjaviste.daggermock.DaggerMockRule;
+
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import static android.support.test.espresso.Espresso.onView;
+import static android.support.test.espresso.action.ViewActions.click;
+import static android.support.test.espresso.assertion.ViewAssertions.doesNotExist;
 import static android.support.test.espresso.assertion.ViewAssertions.matches;
+import static android.support.test.espresso.matcher.ViewMatchers.isClickable;
 import static android.support.test.espresso.matcher.ViewMatchers.isDisplayed;
+import static android.support.test.espresso.matcher.ViewMatchers.withId;
 import static android.support.test.espresso.matcher.ViewMatchers.withText;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.when;
 
 @RunWith(AndroidJUnit4.class) @LargeTest public class MainActivityTest {
@@ -57,7 +68,8 @@ import static org.mockito.Mockito.when;
 
   @Mock SuperHeroesRepository repository;
 
-  @Test public void showsEmptyCaseIfThereAreNoSuperHeroes() {
+  @Test
+  public void showsEmptyCaseIfThereAreNoSuperHeroes() {
     givenThereAreNoSuperHeroes();
 
     startActivity();
@@ -65,8 +77,61 @@ import static org.mockito.Mockito.when;
     onView(withText("¯\\_(ツ)_/¯")).check(matches(isDisplayed()));
   }
 
+  @Test
+  public void showsCaseIfThereAreSuperHeroes() {
+    givenThereAreSuperHeroes();
+
+    startActivity();
+
+    onView(withText("¯\\_(ツ)_/¯")).check(matches(not(isDisplayed())));
+  }
+
+  @Test
+  public void doesNotShowProgressBarIfThereAreSuperHeroes() {
+    givenThereAreSuperHeroes();
+
+    startActivity();
+
+    onView(withId(R.id.progress_bar)).check(matches(not(isDisplayed())));
+  }
+/*
+  @Test
+  public void doesShowProgressBarIfThereAreSuperHeroes() {
+    givenThereAreSuperHeroes();
+
+    startActivity();
+
+    //onView(withId(R.id.recycler_view)).perform(click());
+    onView(withId(R.id.progress_bar)).check(matches(isDisplayed()));
+  }
+*/
+  private void givenThereAreSuperHeroes() {
+    /*List<SuperHero> nonEmptyList = new ArrayList<>();
+    SuperHero hero = new SuperHero("Iron Man", "https://i.annihil.us/u/prod/marvel/i/mg/c/60/55b6a28ef24fa.jpg",
+            true, "Wounded, captured and forced to build a weapon by his enemies, billionaire "
+            + "industrialist Tony Stark instead created an advanced suit of armor to save his "
+            + "life and escape captivity. Now with a new outlook on life, Tony uses his money "
+            + "and intelligence to make the world a safer, better place as Iron Man.");
+    nonEmptyList.add(hero);*/
+    final List<SuperHero> superheroes = new ArrayList<>();
+
+    for (int i = 0; i < 10; i++) {
+      SuperHero superhero = new SuperHero("name " +i, null, false, "de");
+      superheroes.add(superhero);
+    }
+    when(repository.getAll()).thenReturn(superheroes);
+    /*when(repository.getAll()).then(new Answer<Object>() {
+      @Override
+      public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
+        Thread.sleep(3333);
+        return superheroes;
+      }
+    });*/
+  }
+
   private void givenThereAreNoSuperHeroes() {
-    when(repository.getAll()).thenReturn(Collections.<SuperHero>emptyList());
+    List<SuperHero> emptyList = new ArrayList<>();
+    when(repository.getAll()).thenReturn(emptyList);
   }
 
   private MainActivity startActivity() {
